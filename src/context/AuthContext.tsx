@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const data = await api<{ user: User }>('/auth/me')
-      setUser(data.user)
+      setUser(data.user ?? null)
     } catch {
       setToken(null)
       setUser(null)
@@ -50,8 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       json: { email, password },
     })
+    if (!data.token) throw new Error('Login failed')
     setToken(data.token)
-    setUser(data.user)
+    setUser(data.user ?? null)
   }, [])
 
   const register = useCallback(async (email: string, password: string, name: string) => {
@@ -59,8 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       json: { email, password, name },
     })
+    if (!data.token) throw new Error('Registration failed')
     setToken(data.token)
-    setUser(data.user)
+    setUser(data.user ?? null)
   }, [])
 
   const logout = useCallback(() => {

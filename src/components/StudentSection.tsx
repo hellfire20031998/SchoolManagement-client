@@ -96,7 +96,7 @@ export function StudentSection({ onStudentsChanged }: Props) {
     setClassesLoading(true)
     try {
       const data = await api<{ classes: SchoolClass[] }>('/classes')
-      setClasses(data.classes)
+      setClasses(Array.isArray(data.classes) ? data.classes : [])
     } catch (e) {
       setSnackbar(e instanceof Error ? e.message : 'Failed to load classes')
     } finally {
@@ -130,9 +130,10 @@ export function StudentSection({ onStudentsChanged }: Props) {
       const data = await api<{ students: Student[]; pagination: PaginationMeta }>(
         `/students?${params.toString()}`,
       )
-      setStudents(data.students)
-      setTotal(data.pagination.total)
-      const { totalPages } = data.pagination
+      setStudents(Array.isArray(data.students) ? data.students : [])
+      const total = data.pagination?.total ?? 0
+      setTotal(total)
+      const totalPages = data.pagination?.totalPages ?? 1
       if (totalPages >= 1 && page >= totalPages) {
         setPage(Math.max(0, totalPages - 1))
       }

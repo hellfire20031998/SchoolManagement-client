@@ -8,14 +8,18 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  FormControl,
   IconButton,
   InputAdornment,
+  InputLabel,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  MenuItem,
   Paper,
+  Select,
   Snackbar,
   Table,
   TableBody,
@@ -33,6 +37,8 @@ import {
   CheckCircleOutlined as CheckCircleOutlinedIcon,
   Clear as ClearIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
+  Replay as ReplayIcon,
   Search as SearchIcon,
 } from '@mui/icons-material'
 import { ClassAutocomplete } from './ClassAutocomplete'
@@ -47,6 +53,19 @@ function studentClassIdStr(s: Student): string {
   const c = s.classId
   if (c && typeof c === 'object' && '_id' in c) return (c as SchoolClass)._id
   return typeof c === 'string' ? c : ''
+}
+
+function studentLabel(task: Task): string {
+  const ref = task.studentId
+  if (ref == null || ref === '') return '—'
+  if (typeof ref === 'string') return ref
+  const name = ref.fullName?.trim() || 'Student'
+  const c = ref.classId
+  if (c && typeof c === 'object' && 'classNumber' in c) {
+    const label = formatClassLabel(c as SchoolClass)
+    return label ? `${name} · ${label}` : name
+  }
+  return name
 }
 
 export function TaskSection() {
@@ -78,11 +97,26 @@ export function TaskSection() {
 
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null)
 
+  const [taskSearchInput, setTaskSearchInput] = useState('')
+  const [taskSearchDebounced, setTaskSearchDebounced] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all')
+  const [selectedTaskIds, setSelectedTaskIds] = useState(() => new Set<string>())
+
+  const [editTarget, setEditTarget] = useState<Task | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editDueDate, setEditDueDate] = useState('')
+  const [editStatus, setEditStatus] = useState<'pending' | 'completed'>('pending')
+  const [editSaving, setEditSaving] = useState(false)
+
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [bulkWorking, setBulkWorking] = useState(false)
+
   const loadSelectStudents = useCallback(async () => {
     setStudentsLoading(true)
     try {
       const data = await api<{ students: Student[] }>('/students/minimal')
-      setStudents(data.students)
+      setStudents(Array.isArray(data.students) ? data.students : [])
     } catch (e) {
       setSnackbar(e instanceof Error ? e.message : 'Failed to load students for dropdown')
     } finally {
@@ -94,13 +128,26 @@ export function TaskSection() {
     setClassesLoading(true)
     try {
       const data = await api<{ classes: SchoolClass[] }>('/classes')
-      setClasses(data.classes)
+      setClasses(Array.isArray(data.classes) ? data.classes : [])
     } catch (e) {
       setSnackbar(e instanceof Error ? e.message : 'Failed to load classes')
     } finally {
       setClassesLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setTaskSearchDebounced(taskSearchInput.trim()), 350)
+    return () => window.clearTimeout(id)
+  }, [taskSearchInput])
+
+  useEffect(() => {
+    setTaskPage(0)
+  }, [taskSearchDebounced, statusFilter])
+
+  useEffect(() => {
+    setSelectedTaskIds(new Set())
+  }, [taskSearchDebounced, statusFilter])
 
   const loadTasks = useCallback(async () => {
     setTasksLoading(true)
@@ -110,12 +157,15 @@ export function TaskSection() {
         page: String(taskPage + 1),
         limit: String(taskRowsPerPage),
       })
+      if (taskSearchDebounced) params.set('search', taskSearchDebounced)
+      if (statusFilter !== 'all') params.set('status', statusFilter)
       const data = await api<{ tasks: Task[]; pagination: PaginationMeta }>(
         `/tasks?${params.toString()}`,
       )
-      setTasks(data.tasks)
-      setTaskTotal(data.pagination.total)
-      const { totalPages } = data.pagination
+      setTasks(Array.isArray(data.tasks) ? data.tasks : [])
+      const total = data.pagination?.total ?? 0
+      setTaskTotal(total)
+      const totalPages = data.pagination?.totalPages ?? 1
       if (totalPages >= 1 && taskPage >= totalPages) {
         setTaskPage(Math.max(0, totalPages - 1))
       }
@@ -124,7 +174,7 @@ export function TaskSection() {
     } finally {
       setTasksLoading(false)
     }
-  }, [taskPage, taskRowsPerPage])
+  }, [taskPage, taskRowsPerPage, taskSearchDebounced, statusFilter])
 
   useEffect(() => {
     loadSelectStudents()
@@ -210,13 +260,108 @@ export function TaskSection() {
     }
   }
 
-  async function markComplete(task: Task) {
+  async function setTaskStatus(task: Task, status: 'pending' | 'completed') {
     try {
-      await api(`/tasks/${task._id}/complete`, { method: 'PATCH' })
-      setSnackbar('Marked complete')
+      await api(`/tasks/${task._id}`, {
+        method: 'PUT',
+        json: { status },
+      })
+      setSnackbar(status === 'completed' ? 'Marked complete' : 'Marked pending')
       await loadTasks()
     } catch (e) {
       setSnackbar(e instanceof Error ? e.message : 'Update failed')
+    }
+  }
+
+  function openEdit(task: Task) {
+    setEditTarget(task)
+    setEditTitle(task.title)
+    setEditDescription(task.description ?? '')
+    const d = task.dueDate
+    setEditDueDate(d ? String(d).slice(0, 10) : '')
+    setEditStatus(task.status)
+  }
+
+  async function saveEdit() {
+    if (!editTarget || !editTitle.trim()) return
+    setEditSaving(true)
+    try {
+      await api(`/tasks/${editTarget._id}`, {
+        method: 'PUT',
+        json: {
+          title: editTitle.trim(),
+          description: editDescription,
+          dueDate: editDueDate ? editDueDate : null,
+          status: editStatus,
+        },
+      })
+      setSnackbar('Task updated')
+      setEditTarget(null)
+      await loadTasks()
+    } catch (e) {
+      setSnackbar(e instanceof Error ? e.message : 'Could not save task')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  function toggleTaskRow(id: string) {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAllOnPage() {
+    setSelectedTaskIds((prev) => {
+      if (tasks.length === 0) return prev
+      const allSelected = tasks.every((t) => prev.has(t._id))
+      const next = new Set(prev)
+      if (allSelected) {
+        for (const t of tasks) next.delete(t._id)
+      } else {
+        for (const t of tasks) next.add(t._id)
+      }
+      return next
+    })
+  }
+
+  async function bulkSetStatus(status: 'pending' | 'completed') {
+    if (selectedTaskIds.size === 0) return
+    setBulkWorking(true)
+    try {
+      const data = await api<{ modifiedCount: number }>('/tasks/bulk-status', {
+        method: 'POST',
+        json: { taskIds: [...selectedTaskIds], status },
+      })
+      setSelectedTaskIds(new Set())
+      setSnackbar(`Updated ${data.modifiedCount} task(s)`)
+      await loadTasks()
+    } catch (e) {
+      setSnackbar(e instanceof Error ? e.message : 'Bulk update failed')
+    } finally {
+      setBulkWorking(false)
+    }
+  }
+
+  async function confirmBulkDelete() {
+    if (selectedTaskIds.size === 0) return
+    setBulkWorking(true)
+    try {
+      const data = await api<{ deletedCount: number }>('/tasks/bulk-delete', {
+        method: 'POST',
+        json: { taskIds: [...selectedTaskIds] },
+      })
+      setBulkDeleteOpen(false)
+      setSelectedTaskIds(new Set())
+      setSnackbar(`Deleted ${data.deletedCount} task(s)`)
+      await loadTasks()
+    } catch (e) {
+      setSnackbar(e instanceof Error ? e.message : 'Bulk delete failed')
+    } finally {
+      setBulkWorking(false)
     }
   }
 
@@ -254,7 +399,8 @@ export function TaskSection() {
             Tasks & assignments
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Select one or more students, then assign the same task to all of them. Mark complete when done.
+            Assign tasks to students, search and filter the list, edit details, or change status any time. Use row
+            checkboxes for bulk status or delete.
           </Typography>
         </Box>
         <Button
@@ -280,6 +426,84 @@ export function TaskSection() {
         </Alert>
       )}
 
+      <Box
+        className="flex flex-col gap-2 p-3 sm:flex-row sm:flex-wrap sm:items-end"
+        sx={{ borderBottom: 1, borderColor: 'divider' }}
+      >
+        <TextField
+          size="small"
+          label="Search title, description, or student"
+          placeholder="Type to filter…"
+          value={taskSearchInput}
+          onChange={(e) => setTaskSearchInput(e.target.value)}
+          sx={{ minWidth: 220, flex: '1 1 220px' }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" color="action" />
+                </InputAdornment>
+              ),
+              endAdornment: taskSearchInput ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    aria-label="Clear task search"
+                    edge="end"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setTaskSearchInput('')}
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : undefined,
+            },
+          }}
+        />
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel id="task-status-filter-label">Status</InputLabel>
+          <Select
+            labelId="task-status-filter-label"
+            label="Status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'completed')}
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="completed">Completed</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
+      {selectedTaskIds.size > 0 && (
+        <Box
+          className="flex flex-wrap items-center gap-2 px-3 py-2"
+          sx={{ bgcolor: 'action.selected', borderBottom: 1, borderColor: 'divider' }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {selectedTaskIds.size} selected
+          </Typography>
+          <Button size="small" variant="outlined" disabled={bulkWorking} onClick={() => bulkSetStatus('pending')}>
+            Mark pending
+          </Button>
+          <Button size="small" variant="outlined" disabled={bulkWorking} onClick={() => bulkSetStatus('completed')}>
+            Mark complete
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="error"
+            disabled={bulkWorking}
+            onClick={() => setBulkDeleteOpen(true)}
+          >
+            Delete selected
+          </Button>
+          <Button size="small" onClick={() => setSelectedTaskIds(new Set())} disabled={bulkWorking}>
+            Clear selection
+          </Button>
+        </Box>
+      )}
+
       <TableContainer
         className="max-h-[min(420px,55vh)]"
         sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}
@@ -287,6 +511,19 @@ export function TaskSection() {
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
+              <TableCell padding="checkbox" sx={{ width: 48 }}>
+                <Checkbox
+                  size="small"
+                  indeterminate={
+                    tasks.some((t) => selectedTaskIds.has(t._id)) &&
+                    !tasks.every((t) => selectedTaskIds.has(t._id))
+                  }
+                  checked={tasks.length > 0 && tasks.every((t) => selectedTaskIds.has(t._id))}
+                  onChange={toggleSelectAllOnPage}
+                  disabled={tasks.length === 0 || loading}
+                  slotProps={{ input: { 'aria-label': 'Select all tasks on this page' } }}
+                />
+              </TableCell>
               <TableCell>Title</TableCell>
               <TableCell className="hidden md:table-cell">Student</TableCell>
               <TableCell className="hidden sm:table-cell">Due</TableCell>
@@ -297,19 +534,27 @@ export function TaskSection() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5}>Loading…</TableCell>
+                <TableCell colSpan={6}>Loading…</TableCell>
               </TableRow>
             ) : tasks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5}>
+                <TableCell colSpan={6}>
                   <Typography color="text.secondary">
-                    No tasks on this page. Assign homework to one or more students.
+                    No tasks match your filters. Try adjusting search or status, or assign new tasks.
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
               tasks.map((task) => (
-                <TableRow key={task._id} hover>
+                <TableRow key={task._id} hover selected={selectedTaskIds.has(task._id)}>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      size="small"
+                      checked={selectedTaskIds.has(task._id)}
+                      onChange={() => toggleTaskRow(task._id)}
+                      slotProps={{ input: { 'aria-label': `Select task ${task.title}` } }}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Typography sx={{ fontWeight: 500 }}>{task.title}</Typography>
                     {task.description ? (
@@ -340,18 +585,39 @@ export function TaskSection() {
                     />
                   </TableCell>
                   <TableCell align="right">
+                    <Tooltip title="Edit task">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => openEdit(task)}
+                        aria-label="edit task"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     {task.status === 'pending' ? (
                       <Tooltip title="Mark complete">
                         <IconButton
                           size="small"
                           color="success"
-                          onClick={() => markComplete(task)}
+                          onClick={() => setTaskStatus(task, 'completed')}
                           aria-label="mark complete"
                         >
                           <CheckCircleOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                    ) : null}
+                    ) : (
+                      <Tooltip title="Mark pending">
+                        <IconButton
+                          size="small"
+                          color="warning"
+                          onClick={() => setTaskStatus(task, 'pending')}
+                          aria-label="mark pending"
+                        >
+                          <ReplayIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     <Tooltip title="Delete">
                       <IconButton
                         size="small"
@@ -630,6 +896,99 @@ export function TaskSection() {
           <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
           <Button color="error" variant="contained" onClick={confirmDelete}>
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(editTarget)}
+        onClose={() => !editSaving && setEditTarget(null)}
+        fullWidth
+        maxWidth="sm"
+        slotProps={{ paper: { sx: compactDialogPaperSx } }}
+      >
+        <DialogTitleWithClose onClose={() => !editSaving && setEditTarget(null)} disabled={editSaving}>
+          Edit task
+        </DialogTitleWithClose>
+        <DialogContent className="flex flex-col gap-2 pt-1">
+          {editTarget ? (
+            <>
+              <Typography variant="body2" color="text.secondary">
+                Student: {studentLabel(editTarget)}
+              </Typography>
+              <TextField
+                label="Title"
+                required
+                fullWidth
+                margin="dense"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                disabled={editSaving}
+              />
+              <TextField
+                label="Description"
+                fullWidth
+                margin="dense"
+                multiline
+                minRows={3}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                disabled={editSaving}
+              />
+              <TextField
+                label="Due date"
+                type="date"
+                fullWidth
+                margin="dense"
+                slotProps={{ inputLabel: { shrink: true } }}
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                disabled={editSaving}
+              />
+              <FormControl fullWidth margin="dense" disabled={editSaving}>
+                <InputLabel id="edit-task-status-label">Status</InputLabel>
+                <Select
+                  labelId="edit-task-status-label"
+                  label="Status"
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as 'pending' | 'completed')}
+                >
+                  <MenuItem value="pending">Pending</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                </Select>
+              </FormControl>
+            </>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditTarget(null)} disabled={editSaving}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={saveEdit} disabled={editSaving || !editTitle.trim()}>
+            {editSaving ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={bulkDeleteOpen}
+        onClose={() => !bulkWorking && setBulkDeleteOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        slotProps={{ paper: { sx: compactDialogPaperSx } }}
+      >
+        <DialogTitleWithClose onClose={() => !bulkWorking && setBulkDeleteOpen(false)}>
+          Delete {selectedTaskIds.size} task{selectedTaskIds.size === 1 ? '' : 's'}?
+        </DialogTitleWithClose>
+        <DialogContent>
+          <Typography>This cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkDeleteOpen(false)} disabled={bulkWorking}>
+            Cancel
+          </Button>
+          <Button color="error" variant="contained" onClick={confirmBulkDelete} disabled={bulkWorking}>
+            {bulkWorking ? 'Deleting…' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

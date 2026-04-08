@@ -29,10 +29,12 @@ export async function api<T>(path: string, opts: FetchOpts = {}): Promise<T> {
   const token = getToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
+  // Avoid 304 + empty body: fetch treats 304 as !res.ok and Express may respond with ETag revalidation.
   const res = await fetch(apiUrl(path), {
     ...rest,
     headers,
     body: json !== undefined ? JSON.stringify(json) : rest.body,
+    cache: 'no-store',
   })
 
   const data = await res.json().catch(() => ({}))

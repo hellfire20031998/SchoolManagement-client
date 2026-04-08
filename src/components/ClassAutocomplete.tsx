@@ -83,7 +83,7 @@ export function ClassAutocomplete({
     const params = new URLSearchParams({ search: q })
     api<{ classes: SchoolClass[] }>(`/classes?${params.toString()}`)
       .then((data) => {
-        if (!cancelled) setOptions(data.classes)
+        if (!cancelled) setOptions(Array.isArray(data.classes) ? data.classes : [])
       })
       .catch((e) => {
         if (!cancelled) {
