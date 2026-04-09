@@ -532,23 +532,23 @@ export function TaskSection() {
         sx={{
           overflowX: 'auto',
           WebkitOverflowScrolling: 'touch',
-          mx: { xs: -0.5, sm: 0 },
-          width: { xs: 'calc(100% + 8px)', sm: '100%' },
+          width: '100%',
         }}
       >
         <Table
           size="small"
           stickyHeader
           sx={{
-            tableLayout: 'fixed',
+            /** Auto layout + min width: horizontal scroll on narrow viewports instead of squashed/overlapping columns */
+            tableLayout: 'auto',
             width: '100%',
-            minWidth: { xs: 0, sm: 640 },
-            '& .MuiTableCell-root': { px: { xs: 0.5, sm: 2 }, py: { xs: 0.75, sm: 1.5 } },
+            minWidth: { xs: 720, sm: 800, md: 960 },
+            '& .MuiTableCell-root': { px: { xs: 1, sm: 2 }, py: { xs: 1, sm: 1.5 }, verticalAlign: 'top' },
           }}
         >
           <TableHead>
             <TableRow>
-              <TableCell padding="checkbox" sx={{ width: 40, maxWidth: 40 }}>
+              <TableCell padding="checkbox" sx={{ width: 48, whiteSpace: 'nowrap' }}>
                 <Checkbox
                   size="small"
                   indeterminate={
@@ -561,15 +561,15 @@ export function TaskSection() {
                   slotProps={{ input: { 'aria-label': 'Select all tasks on this page' } }}
                 />
               </TableCell>
-              <TableCell sx={{ width: { xs: 'auto', sm: '36%' } }}>Title</TableCell>
-              <TableCell className="hidden md:table-cell" sx={{ width: '28%' }}>
+              <TableCell sx={{ minWidth: { xs: 200, sm: 220 } }}>Title</TableCell>
+              <TableCell className="hidden md:table-cell" sx={{ minWidth: 160 }}>
                 Student
               </TableCell>
-              <TableCell className="hidden sm:table-cell" sx={{ width: 100 }}>
+              <TableCell className="hidden sm:table-cell" sx={{ minWidth: 104, whiteSpace: 'nowrap' }}>
                 Due
               </TableCell>
-              <TableCell sx={{ width: { xs: 102, sm: 118 } }}>Status</TableCell>
-              <TableCell align="right" sx={{ width: { xs: 40, sm: 132 }, pr: { xs: 0.25, sm: 2 } }}>
+              <TableCell sx={{ minWidth: 112, whiteSpace: 'nowrap' }}>Status</TableCell>
+              <TableCell align="right" sx={{ minWidth: { xs: 44, sm: 120 }, whiteSpace: 'nowrap', pr: { xs: 1, sm: 2 } }}>
                 Actions
               </TableCell>
             </TableRow>
@@ -598,31 +598,59 @@ export function TaskSection() {
                       slotProps={{ input: { 'aria-label': `Select task ${task.title}` } }}
                     />
                   </TableCell>
-                  <TableCell sx={{ minWidth: 0, maxWidth: { xs: '1px', sm: 'none' } }}>
-                    <Typography
-                      sx={{
-                        fontWeight: 500,
-                        overflow: 'hidden',
-                        display: '-webkit-box',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: { xs: 3, sm: 'unset' },
-                        wordBreak: 'break-word',
-                      }}
-                      component="span"
-                    >
-                      {task.title}
-                    </Typography>
-                    {task.description ? (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        {task.description}
+                  <TableCell sx={{ maxWidth: 360 }}>
+                    <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 500,
+                          overflow: 'hidden',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 2,
+                          wordBreak: 'break-word',
+                        }}
+                        component="span"
+                      >
+                        {task.title}
                       </Typography>
-                    ) : null}
-                    <Typography variant="caption" color="text.secondary" className="md:hidden">
+                      {task.description ? (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            mt: 0.25,
+                            display: '-webkit-box',
+                            overflow: 'hidden',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: 2,
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {task.description}
+                        </Typography>
+                      ) : null}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          mt: 0.25,
+                          display: { xs: 'block', md: 'none' },
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '100%',
+                        }}
+                      >
+                        {studentLabel(task)}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell" sx={{ maxWidth: 220 }}>
+                    <Typography sx={{ wordBreak: 'break-word' }} component="span">
                       {studentLabel(task)}
                     </Typography>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{studentLabel(task)}</TableCell>
-                  <TableCell className="hidden sm:table-cell">
+                  <TableCell className="hidden sm:table-cell" sx={{ whiteSpace: 'nowrap' }}>
                     {task.dueDate
                       ? new Date(task.dueDate).toLocaleDateString(undefined, {
                           year: 'numeric',
@@ -631,29 +659,23 @@ export function TaskSection() {
                         })
                       : '—'}
                   </TableCell>
-                  <TableCell sx={{ verticalAlign: 'middle' }}>
+                  <TableCell>
                     <Chip
                       size="small"
                       label={task.status === 'completed' ? 'Completed' : 'Pending'}
                       color={task.status === 'completed' ? 'success' : 'default'}
                       variant={task.status === 'completed' ? 'filled' : 'outlined'}
-                      sx={{ maxWidth: '100%', '& .MuiChip-label': { px: { xs: 0.75, sm: 1.25 } } }}
+                      sx={{ maxWidth: '100%' }}
                     />
                   </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      verticalAlign: 'top',
-                      pr: { xs: 0.25, sm: 2 },
-                    }}
-                  >
+                  <TableCell align="right" sx={{ pr: { xs: 1, sm: 2 } }}>
                     <Box
                       sx={{
-                        display: 'flex',
+                        display: 'inline-flex',
                         flexDirection: { xs: 'column', sm: 'row' },
                         alignItems: { xs: 'flex-end', sm: 'center' },
                         justifyContent: 'flex-end',
-                        gap: { xs: 0, sm: 0 },
+                        gap: 0,
                       }}
                     >
                       <Tooltip title="Edit task">
