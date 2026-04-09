@@ -408,7 +408,7 @@ export function TaskSection() {
           startIcon={<AddIcon />}
           onClick={openCreate}
           disabled={studentsLoading || studentOptions.length === 0}
-          className="shrink-0"
+          sx={{ width: { xs: '100%', sm: 'auto' }, alignSelf: { xs: 'stretch', sm: 'auto' } }}
         >
           Assign task
         </Button>
@@ -436,7 +436,7 @@ export function TaskSection() {
           placeholder="Type to filter…"
           value={taskSearchInput}
           onChange={(e) => setTaskSearchInput(e.target.value)}
-          sx={{ minWidth: 220, flex: '1 1 220px' }}
+          sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 220 }, flex: { sm: '1 1 220px' } }}
           slotProps={{
             input: {
               startAdornment: (
@@ -460,7 +460,7 @@ export function TaskSection() {
             },
           }}
         />
-        <FormControl size="small" sx={{ minWidth: 160 }}>
+        <FormControl size="small" sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 160 } }}>
           <InputLabel id="task-status-filter-label">Status</InputLabel>
           <Select
             labelId="task-status-filter-label"
@@ -478,15 +478,32 @@ export function TaskSection() {
       {selectedTaskIds.size > 0 && (
         <Box
           className="flex flex-wrap items-center gap-2 px-3 py-2"
-          sx={{ bgcolor: 'action.selected', borderBottom: 1, borderColor: 'divider' }}
+          sx={{
+            bgcolor: 'action.selected',
+            borderBottom: 1,
+            borderColor: 'divider',
+            justifyContent: { xs: 'center', sm: 'flex-start' },
+          }}
         >
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             {selectedTaskIds.size} selected
           </Typography>
-          <Button size="small" variant="outlined" disabled={bulkWorking} onClick={() => bulkSetStatus('pending')}>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={bulkWorking}
+            onClick={() => bulkSetStatus('pending')}
+            sx={{ flex: { xs: '1 1 auto', sm: '0 0 auto' }, minWidth: { xs: 'calc(50% - 4px)', sm: 'auto' } }}
+          >
             Mark pending
           </Button>
-          <Button size="small" variant="outlined" disabled={bulkWorking} onClick={() => bulkSetStatus('completed')}>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={bulkWorking}
+            onClick={() => bulkSetStatus('completed')}
+            sx={{ flex: { xs: '1 1 auto', sm: '0 0 auto' }, minWidth: { xs: 'calc(50% - 4px)', sm: 'auto' } }}
+          >
             Mark complete
           </Button>
           <Button
@@ -495,10 +512,16 @@ export function TaskSection() {
             color="error"
             disabled={bulkWorking}
             onClick={() => setBulkDeleteOpen(true)}
+            sx={{ flex: { xs: '1 1 auto', sm: '0 0 auto' }, minWidth: { xs: 'calc(50% - 4px)', sm: 'auto' } }}
           >
             Delete selected
           </Button>
-          <Button size="small" onClick={() => setSelectedTaskIds(new Set())} disabled={bulkWorking}>
+          <Button
+            size="small"
+            onClick={() => setSelectedTaskIds(new Set())}
+            disabled={bulkWorking}
+            sx={{ flex: { xs: '1 1 100%', sm: '0 0 auto' } }}
+          >
             Clear selection
           </Button>
         </Box>
@@ -506,12 +529,26 @@ export function TaskSection() {
 
       <TableContainer
         className="max-h-[min(420px,55vh)]"
-        sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}
+        sx={{
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          mx: { xs: -0.5, sm: 0 },
+          width: { xs: 'calc(100% + 8px)', sm: '100%' },
+        }}
       >
-        <Table size="small" stickyHeader>
+        <Table
+          size="small"
+          stickyHeader
+          sx={{
+            tableLayout: 'fixed',
+            width: '100%',
+            minWidth: { xs: 0, sm: 640 },
+            '& .MuiTableCell-root': { px: { xs: 0.5, sm: 2 }, py: { xs: 0.75, sm: 1.5 } },
+          }}
+        >
           <TableHead>
             <TableRow>
-              <TableCell padding="checkbox" sx={{ width: 48 }}>
+              <TableCell padding="checkbox" sx={{ width: 40, maxWidth: 40 }}>
                 <Checkbox
                   size="small"
                   indeterminate={
@@ -524,11 +561,17 @@ export function TaskSection() {
                   slotProps={{ input: { 'aria-label': 'Select all tasks on this page' } }}
                 />
               </TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell className="hidden md:table-cell">Student</TableCell>
-              <TableCell className="hidden sm:table-cell">Due</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell sx={{ width: { xs: 'auto', sm: '36%' } }}>Title</TableCell>
+              <TableCell className="hidden md:table-cell" sx={{ width: '28%' }}>
+                Student
+              </TableCell>
+              <TableCell className="hidden sm:table-cell" sx={{ width: 100 }}>
+                Due
+              </TableCell>
+              <TableCell sx={{ width: { xs: 102, sm: 118 } }}>Status</TableCell>
+              <TableCell align="right" sx={{ width: { xs: 40, sm: 132 }, pr: { xs: 0.25, sm: 2 } }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -555,8 +598,20 @@ export function TaskSection() {
                       slotProps={{ input: { 'aria-label': `Select task ${task.title}` } }}
                     />
                   </TableCell>
-                  <TableCell>
-                    <Typography sx={{ fontWeight: 500 }}>{task.title}</Typography>
+                  <TableCell sx={{ minWidth: 0, maxWidth: { xs: '1px', sm: 'none' } }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 500,
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: { xs: 3, sm: 'unset' },
+                        wordBreak: 'break-word',
+                      }}
+                      component="span"
+                    >
+                      {task.title}
+                    </Typography>
                     {task.description ? (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         {task.description}
@@ -576,58 +631,79 @@ export function TaskSection() {
                         })
                       : '—'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ verticalAlign: 'middle' }}>
                     <Chip
                       size="small"
                       label={task.status === 'completed' ? 'Completed' : 'Pending'}
                       color={task.status === 'completed' ? 'success' : 'default'}
                       variant={task.status === 'completed' ? 'filled' : 'outlined'}
+                      sx={{ maxWidth: '100%', '& .MuiChip-label': { px: { xs: 0.75, sm: 1.25 } } }}
                     />
                   </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Edit task">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => openEdit(task)}
-                        aria-label="edit task"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    {task.status === 'pending' ? (
-                      <Tooltip title="Mark complete">
+                  <TableCell
+                    align="right"
+                    sx={{
+                      verticalAlign: 'top',
+                      pr: { xs: 0.25, sm: 2 },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'flex-end', sm: 'center' },
+                        justifyContent: 'flex-end',
+                        gap: { xs: 0, sm: 0 },
+                      }}
+                    >
+                      <Tooltip title="Edit task">
                         <IconButton
                           size="small"
-                          color="success"
-                          onClick={() => setTaskStatus(task, 'completed')}
-                          aria-label="mark complete"
+                          color="primary"
+                          onClick={() => openEdit(task)}
+                          aria-label="edit task"
+                          sx={{ p: { xs: 0.5, sm: 1 } }}
                         >
-                          <CheckCircleOutlinedIcon fontSize="small" />
+                          <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                         </IconButton>
                       </Tooltip>
-                    ) : (
-                      <Tooltip title="Mark pending">
+                      {task.status === 'pending' ? (
+                        <Tooltip title="Mark complete">
+                          <IconButton
+                            size="small"
+                            color="success"
+                            onClick={() => setTaskStatus(task, 'completed')}
+                            aria-label="mark complete"
+                            sx={{ p: { xs: 0.5, sm: 1 } }}
+                          >
+                            <CheckCircleOutlinedIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Mark pending">
+                          <IconButton
+                            size="small"
+                            color="warning"
+                            onClick={() => setTaskStatus(task, 'pending')}
+                            aria-label="mark pending"
+                            sx={{ p: { xs: 0.5, sm: 1 } }}
+                          >
+                            <ReplayIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Delete">
                         <IconButton
                           size="small"
-                          color="warning"
-                          onClick={() => setTaskStatus(task, 'pending')}
-                          aria-label="mark pending"
+                          color="error"
+                          onClick={() => setDeleteTarget(task)}
+                          aria-label="delete task"
+                          sx={{ p: { xs: 0.5, sm: 1 } }}
                         >
-                          <ReplayIcon fontSize="small" />
+                          <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                         </IconButton>
                       </Tooltip>
-                    )}
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => setDeleteTarget(task)}
-                        aria-label="delete task"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))
@@ -650,10 +726,31 @@ export function TaskSection() {
         sx={{
           borderTop: 1,
           borderColor: 'divider',
+          px: { xs: 0.5, sm: 2 },
+          overflow: 'hidden',
           '& .MuiTablePagination-toolbar': {
             flexWrap: 'wrap',
-            gap: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: { xs: 1.5, sm: 1 },
             justifyContent: { xs: 'center', sm: 'flex-end' },
+            minHeight: { xs: 'auto', sm: 52 },
+            py: { xs: 1.5, sm: 0.5 },
+          },
+          '& .MuiTablePagination-spacer': { display: { xs: 'none', sm: 'block' } },
+          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-input': {
+            fontSize: { xs: '0.8125rem', sm: '1rem' },
+          },
+          '& .MuiTablePagination-displayedRows': {
+            fontSize: { xs: '0.8125rem', sm: '1rem' },
+            textAlign: { xs: 'center', sm: 'right' },
+            margin: { xs: '0 auto', sm: 0 },
+            width: { xs: '100%', sm: 'auto' },
+            order: { xs: 3, sm: 0 },
+          },
+          '& .MuiTablePagination-actions': {
+            marginLeft: { xs: 0, sm: 'auto' },
+            alignSelf: { xs: 'center', sm: 'auto' },
           },
         }}
       />

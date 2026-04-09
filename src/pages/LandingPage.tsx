@@ -118,7 +118,7 @@ function LandingView() {
               Where curiosity meets care
             </Typography>
             <Typography component="p" color="text.secondary" sx={{ mb: 2 }}>
-              Greenwood Academy is committed to academic rigor, creativity, and character. Our faculty
+              Gridaan Academy is committed to academic rigor, creativity, and character. Our faculty
               partners with families to help every learner feel known, challenged, and supported.
             </Typography>
             <Typography component="p" color="text.secondary" sx={{ mb: 0 }}>
@@ -267,7 +267,7 @@ function LandingView() {
           <Box className="flex items-center gap-2">
             <SchoolIcon color="primary" />
             <Typography variant="body2" color="text.secondary">
-              © {new Date().getFullYear()} Greenwood Academy. All rights reserved.
+              © {new Date().getFullYear()} Gridaan Academy. All rights reserved.
             </Typography>
           </Box>
           <Box className="flex flex-wrap justify-center gap-4">

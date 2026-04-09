@@ -299,16 +299,31 @@ export function StudentSection({ onStudentsChanged }: Props) {
             Paginated list.
           </Typography>
         </Box>
-        <Box className="flex flex-wrap gap-2">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            flexWrap: 'wrap',
+            gap: 1,
+            width: { xs: '100%', sm: 'auto' },
+            alignSelf: { xs: 'stretch', sm: 'auto' },
+          }}
+        >
           <Button
             variant="outlined"
             startIcon={<AddIcon />}
             onClick={openClassDialog}
             disabled={classesLoading}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Class
           </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate} className="shrink-0">
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openCreate}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
             Add student
           </Button>
         </Box>
@@ -328,7 +343,7 @@ export function StudentSection({ onStudentsChanged }: Props) {
       )}
 
       <Box
-        className="flex flex-col gap-2 px-4 sm:flex-row sm:flex-wrap sm:items-end"
+        className="flex flex-col gap-2 px-3 sm:flex-row sm:flex-wrap sm:items-end sm:px-4"
         sx={{ pt: 2, pb: 1 }}
       >
         <TextField
@@ -337,7 +352,7 @@ export function StudentSection({ onStudentsChanged }: Props) {
           placeholder="Name, class, roll…"
           value={listSearchInput}
           onChange={(e) => setListSearchInput(e.target.value)}
-          sx={{ minWidth: 220, flex: '1 1 220px' }}
+          sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 220 }, flex: { sm: '1 1 220px' } }}
           slotProps={{
             input: {
               startAdornment: (
@@ -371,21 +386,39 @@ export function StudentSection({ onStudentsChanged }: Props) {
           disabled={classesLoading}
           size="small"
           margin="none"
-          sx={{ minWidth: 200, flex: '1 1 200px' }}
+          sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 200 }, flex: { sm: '1 1 200px' } }}
         />
       </Box>
 
       <TableContainer
         className="max-h-[min(420px,55vh)]"
-        sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}
+        sx={{
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          mx: { xs: -0.5, sm: 0 },
+          width: { xs: 'calc(100% + 8px)', sm: '100%' },
+        }}
       >
-        <Table size="small" stickyHeader>
+        <Table
+          size="small"
+          stickyHeader
+          sx={{
+            tableLayout: 'fixed',
+            width: '100%',
+            minWidth: { xs: 0, sm: 520 },
+            '& .MuiTableCell-root': { px: { xs: 0.5, sm: 2 }, py: { xs: 0.75, sm: 1.5 } },
+          }}
+        >
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Class</TableCell>
-              <TableCell className="hidden sm:table-cell">Roll</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell sx={{ width: { xs: 'auto', sm: '34%' } }}>Name</TableCell>
+              <TableCell sx={{ minWidth: 0, width: { xs: 'auto', sm: '40%' } }}>Class</TableCell>
+              <TableCell className="hidden sm:table-cell" sx={{ width: 88 }}>
+                Roll
+              </TableCell>
+              <TableCell align="right" sx={{ width: { xs: 40, sm: 96 }, pr: { xs: 0.25, sm: 2 } }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -404,25 +437,72 @@ export function StudentSection({ onStudentsChanged }: Props) {
             ) : (
               students.map((s) => (
                 <TableRow key={s._id} hover>
-                  <TableCell>{s.fullName}</TableCell>
-                  <TableCell sx={{ maxWidth: 280 }}>{studentClassLabel(s)}</TableCell>
+                  <TableCell sx={{ minWidth: 0, maxWidth: { xs: '1px', sm: 'none' } }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 500,
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: { xs: 2, sm: 'unset' },
+                        wordBreak: 'break-word',
+                      }}
+                      component="span"
+                    >
+                      {s.fullName}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: { xs: 'block', sm: 'none' }, mt: 0.25 }}
+                    >
+                      Roll: {s.rollNumber ?? '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      minWidth: 0,
+                      maxWidth: { sm: 280 },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {studentClassLabel(s)}
+                  </TableCell>
                   <TableCell className="hidden sm:table-cell">{s.rollNumber ?? '—'}</TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Edit">
-                      <IconButton size="small" onClick={() => openEdit(s)} aria-label="edit student">
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => setDeleteTarget(s)}
-                        aria-label="delete student"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                  <TableCell align="right" sx={{ verticalAlign: 'top', pr: { xs: 0.25, sm: 2 } }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'flex-end', sm: 'center' },
+                        justifyContent: 'flex-end',
+                        gap: 0,
+                      }}
+                    >
+                      <Tooltip title="Edit">
+                        <IconButton
+                          size="small"
+                          onClick={() => openEdit(s)}
+                          aria-label="edit student"
+                          sx={{ p: { xs: 0.5, sm: 1 } }}
+                        >
+                          <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => setDeleteTarget(s)}
+                          aria-label="delete student"
+                          sx={{ p: { xs: 0.5, sm: 1 } }}
+                        >
+                          <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))
@@ -445,10 +525,31 @@ export function StudentSection({ onStudentsChanged }: Props) {
         sx={{
           borderTop: 1,
           borderColor: 'divider',
+          px: { xs: 0.5, sm: 2 },
+          overflow: 'hidden',
           '& .MuiTablePagination-toolbar': {
             flexWrap: 'wrap',
-            gap: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: { xs: 1.5, sm: 1 },
             justifyContent: { xs: 'center', sm: 'flex-end' },
+            minHeight: { xs: 'auto', sm: 52 },
+            py: { xs: 1.5, sm: 0.5 },
+          },
+          '& .MuiTablePagination-spacer': { display: { xs: 'none', sm: 'block' } },
+          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-input': {
+            fontSize: { xs: '0.8125rem', sm: '1rem' },
+          },
+          '& .MuiTablePagination-displayedRows': {
+            fontSize: { xs: '0.8125rem', sm: '1rem' },
+            textAlign: { xs: 'center', sm: 'right' },
+            margin: { xs: '0 auto', sm: 0 },
+            width: { xs: '100%', sm: 'auto' },
+            order: { xs: 3, sm: 0 },
+          },
+          '& .MuiTablePagination-actions': {
+            marginLeft: { xs: 0, sm: 'auto' },
+            alignSelf: { xs: 'center', sm: 'auto' },
           },
         }}
       />
@@ -508,7 +609,15 @@ export function StudentSection({ onStudentsChanged }: Props) {
             onChange={(e) => setClassForm((f) => ({ ...f, batchYear: e.target.value }))}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            gap: 1,
+            px: { xs: 2, sm: 3 },
+            pb: 2,
+            '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } },
+          }}
+        >
           <Button onClick={() => setClassDialogOpen(false)} disabled={classSaving}>
             Cancel
           </Button>
@@ -619,7 +728,15 @@ export function StudentSection({ onStudentsChanged }: Props) {
             onChange={(e) => setForm((f) => ({ ...f, dateOfBirth: e.target.value }))}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            gap: 1,
+            px: { xs: 2, sm: 3 },
+            pb: 2,
+            '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } },
+          }}
+        >
           <Button onClick={() => setDialogOpen(false)} disabled={saving}>
             Cancel
           </Button>
@@ -648,7 +765,15 @@ export function StudentSection({ onStudentsChanged }: Props) {
             This will remove <strong>{deleteTarget?.fullName}</strong> and all tasks assigned to them.
           </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            gap: 1,
+            px: { xs: 2, sm: 3 },
+            pb: 2,
+            '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } },
+          }}
+        >
           <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
           <Button color="error" variant="contained" onClick={confirmDelete}>
             Delete

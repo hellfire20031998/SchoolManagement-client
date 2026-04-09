@@ -1,4 +1,4 @@
-# Greenwood Academy - School Management System
+# Gridaan Academy - School Management System
 
 Full-stack admin app for **students**, **classes**, and **tasks** (assignments). Includes a public landing page, JWT authentication, and a protected dashboard.
 

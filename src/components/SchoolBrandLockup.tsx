@@ -45,7 +45,7 @@ export function SchoolBrandLockup({ to, dense }: Props) {
           }}
           noWrap
         >
-          Greenwood Academy
+          Gridaan Academy
         </Typography>
         <Typography
           variant="caption"
