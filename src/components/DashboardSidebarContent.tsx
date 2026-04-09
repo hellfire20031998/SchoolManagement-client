@@ -1,19 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import {
-  Box,
-  Divider,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from '@mui/material'
+import { Box, Divider, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material'
 import {
   AssignmentOutlined,
   DashboardOutlined,
   GroupsOutlined,
-  School as SchoolIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material'
+import { SchoolBrandLockup } from './SchoolBrandLockup'
+import { useAuth } from '../context/AuthContext'
 
 export type DashboardNavSection = 'overview' | 'students' | 'tasks'
 
@@ -40,37 +34,34 @@ type Props = {
   onMobileNavigate?: () => void
 }
 
+function navItemSelected(pathname: string, to: string, id: DashboardNavSection): boolean {
+  const p = pathname.replace(/\/$/, '') || '/'
+  const t = to.replace(/\/$/, '') || '/'
+  if (p === t) return true
+  if (id === 'overview' && p === '/dashboard') return true
+  return false
+}
+
 export function DashboardSidebarContent({ onMobileNavigate }: Props) {
   const { pathname } = useLocation()
+  const { logout } = useAuth()
 
   return (
     <Box className="flex h-full flex-col">
-      <Box className="flex items-center gap-2 px-3 py-4">
-        <Box
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-white"
-          sx={{ bgcolor: 'primary.main' }}
-        >
-          <SchoolIcon fontSize="small" />
-        </Box>
-        <Box className="min-w-0">
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }} noWrap>
-            School Management
-          </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            Admin workspace
-          </Typography>
-        </Box>
+      <Box className="px-3 py-4">
+        <SchoolBrandLockup to="/dashboard/overview" />
       </Box>
       <Divider />
       <List dense sx={{ px: 1, py: 2 }} className="flex-1">
         {navItems.map(({ id, label, Icon }) => {
           const to = ROUTES[id]
-          const selected = pathname === to
+          const selected = navItemSelected(pathname, to, id)
           return (
             <ListItemButton
               key={id}
               component={NavLink}
               to={to}
+              end
               selected={selected}
               onClick={() => onMobileNavigate?.()}
               aria-current={selected ? 'page' : undefined}
@@ -92,6 +83,21 @@ export function DashboardSidebarContent({ onMobileNavigate }: Props) {
             </ListItemButton>
           )
         })}
+      </List>
+      <Divider sx={{ mx: 1 }} />
+      <List dense sx={{ px: 1, py: 1 }}>
+        <ListItemButton
+          onClick={() => {
+            onMobileNavigate?.()
+            logout()
+          }}
+          sx={{ borderRadius: 1 }}
+        >
+          <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Sign out" sx={{ '& .MuiListItemText-primary': { fontWeight: 600 } }} />
+        </ListItemButton>
       </List>
     </Box>
   )

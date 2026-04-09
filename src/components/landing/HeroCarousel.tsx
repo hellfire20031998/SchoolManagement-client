@@ -3,35 +3,100 @@ import { Link as RouterLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Box, Button, Container, IconButton, Typography } from '@mui/material'
 import { ChevronLeft, ChevronRight } from '@mui/icons-material'
+import { useAuth } from '../../context/AuthContext'
+import { SCHOOL_HERO_IMAGES } from '../../data/landingMedia'
 
 const AUTO_MS = 6500
 
-const slides = [
+const HERO_COPY = [
   {
-    id: 'slide-1',
-    gradient: 'from-teal-700 via-teal-800 to-slate-900',
     kicker: 'Excellence in education',
     title: 'Nurturing minds, building futures',
     description:
       'A welcoming place for students to grow — with modern tools for administrators to manage enrollment, student records, and assignments in one secure place.',
   },
   {
-    id: 'slide-2',
-    gradient: 'from-indigo-800 via-teal-900 to-slate-950',
     kicker: 'Community & character',
     title: 'Together we learn, lead, and belong',
     description:
       'Small classes, caring mentors, and rich activities help every student discover strengths, build confidence, and contribute to a vibrant school community.',
   },
   {
-    id: 'slide-3',
-    gradient: 'from-emerald-800 via-cyan-900 to-slate-900',
     kicker: 'Digital school operations',
     title: 'Run your school with clarity and control',
     description:
       'Our admin portal keeps rosters, classes, and homework organized — so staff spend less time on paperwork and more time supporting students.',
   },
 ] as const
+
+const GRADIENT_FALLBACK_SLIDES = [
+  {
+    id: 'slide-1',
+    gradient: 'from-teal-700 via-teal-800 to-slate-900',
+    ...HERO_COPY[0],
+  },
+  {
+    id: 'slide-2',
+    gradient: 'from-indigo-800 via-teal-900 to-slate-950',
+    ...HERO_COPY[1],
+  },
+  {
+    id: 'slide-3',
+    gradient: 'from-emerald-800 via-cyan-900 to-slate-900',
+    ...HERO_COPY[2],
+  },
+] as const
+
+const heroSlidesFromSchoolImages =
+  SCHOOL_HERO_IMAGES.length > 0
+    ? SCHOOL_HERO_IMAGES.map((image, i) => ({
+        id: `hero-school-${i}`,
+        image,
+        ...HERO_COPY[i % HERO_COPY.length],
+      }))
+    : null
+
+function HeroCtaButtons() {
+  const { user } = useAuth()
+  if (user) {
+    return (
+      <Button
+        component={RouterLink}
+        to="/dashboard"
+        variant="contained"
+        size="large"
+        className="bg-white text-teal-900 shadow-lg hover:bg-slate-100"
+        sx={{ fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}
+      >
+        Open dashboard
+      </Button>
+    )
+  }
+  return (
+    <>
+      <Button
+        component={RouterLink}
+        to="/register"
+        variant="contained"
+        size="large"
+        className="bg-white text-teal-900 shadow-lg hover:bg-slate-100"
+        sx={{ fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}
+      >
+        Get started
+      </Button>
+      <Button
+        component={RouterLink}
+        to="/login"
+        variant="outlined"
+        size="large"
+        className="border-white text-white hover:border-white hover:bg-white/10"
+        sx={{ width: { xs: '100%', sm: 'auto' } }}
+      >
+        Staff sign in
+      </Button>
+    </>
+  )
+}
 
 const contentMotion = {
   initial: { opacity: 0, y: 22 },
@@ -44,6 +109,7 @@ export function HeroCarousel() {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
 
+  const slides = heroSlidesFromSchoolImages ?? [...GRADIENT_FALLBACK_SLIDES]
   const len = slides.length
   const go = useCallback((dir: -1 | 1) => {
     setIndex((i) => (i + dir + len) % len)
@@ -56,6 +122,7 @@ export function HeroCarousel() {
   }, [paused, len])
 
   const slide = slides[index]
+  const usePhotos = heroSlidesFromSchoolImages != null
 
   return (
     <Box
@@ -65,14 +132,38 @@ export function HeroCarousel() {
       onMouseLeave={() => setPaused(false)}
     >
       <AnimatePresence initial={false} mode="wait">
-        <motion.div
-          key={slide.id}
-          className={`absolute inset-0 bg-gradient-to-br ${slide.gradient}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.55, ease: 'easeInOut' }}
-        />
+        {usePhotos ? (
+          <motion.div
+            key={slide.id}
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.55, ease: 'easeInOut' }}
+          >
+            <Box
+              component="img"
+              src={(slide as { image: string }).image}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+            />
+            <Box
+              className="absolute inset-0 bg-gradient-to-br from-teal-950/88 via-slate-950/75 to-slate-950/92"
+              aria-hidden
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key={slide.id}
+            className={`absolute inset-0 bg-gradient-to-br ${(slide as (typeof GRADIENT_FALLBACK_SLIDES)[number]).gradient}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.55, ease: 'easeInOut' }}
+          />
+        )}
       </AnimatePresence>
 
       <Box
@@ -132,26 +223,7 @@ export function HeroCarousel() {
                 {slide.description}
               </Typography>
               <Box className="flex flex-wrap gap-2 sm:gap-3">
-                <Button
-                  component={RouterLink}
-                  to="/register"
-                  variant="contained"
-                  size="large"
-                  className="bg-white text-teal-900 shadow-lg hover:bg-slate-100"
-                  sx={{ fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}
-                >
-                  Get started
-                </Button>
-                <Button
-                  component={RouterLink}
-                  to="/login"
-                  variant="outlined"
-                  size="large"
-                  className="border-white text-white hover:border-white hover:bg-white/10"
-                  sx={{ width: { xs: '100%', sm: 'auto' } }}
-                >
-                  Staff sign in
-                </Button>
+                <HeroCtaButtons />
               </Box>
             </motion.div>
           </AnimatePresence>

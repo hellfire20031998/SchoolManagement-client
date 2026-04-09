@@ -11,12 +11,13 @@ import {
   ListItemButton,
   ListItemText,
   Toolbar,
-  Typography,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { Menu as MenuIcon, School as SchoolIcon } from '@mui/icons-material'
+import { Menu as MenuIcon } from '@mui/icons-material'
+import { SchoolBrandLockup } from './SchoolBrandLockup'
 import { ThemeToggle } from './ThemeToggle'
+import { useAuth } from '../context/AuthContext'
 
 const sectionLinkClass = 'text-slate-600 dark:text-slate-300'
 
@@ -24,8 +25,10 @@ export function PublicNavbar() {
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true })
   const { pathname } = useLocation()
+  const { user } = useAuth()
   const isLogin = pathname === '/login'
   const isRegister = pathname === '/register'
+  const isDashboard = pathname.startsWith('/dashboard')
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const closeMobile = () => setMobileOpen(false)
@@ -57,17 +60,25 @@ export function PublicNavbar() {
       </List>
       <Divider sx={{ my: 1 }} />
       <List disablePadding>
-        <ListItemButton component={RouterLink} to="/login" onClick={closeMobile} selected={isLogin}>
-          <ListItemText primary="Sign in" />
-        </ListItemButton>
-        <ListItemButton
-          component={RouterLink}
-          to="/register"
-          onClick={closeMobile}
-          selected={isRegister}
-        >
-          <ListItemText primary="Create admin account" />
-        </ListItemButton>
+        {user ? (
+          <ListItemButton component={RouterLink} to="/dashboard" onClick={closeMobile} selected={isDashboard}>
+            <ListItemText primary="Dashboard" />
+          </ListItemButton>
+        ) : (
+          <>
+            <ListItemButton component={RouterLink} to="/login" onClick={closeMobile} selected={isLogin}>
+              <ListItemText primary="Sign in" />
+            </ListItemButton>
+            <ListItemButton
+              component={RouterLink}
+              to="/register"
+              onClick={closeMobile}
+              selected={isRegister}
+            >
+              <ListItemText primary="Create admin account" />
+            </ListItemButton>
+          </>
+        )}
       </List>
     </Box>
   )
@@ -91,26 +102,8 @@ export function PublicNavbar() {
             <MenuIcon />
           </IconButton>
         )}
-        <Box
-          component={RouterLink}
-          to="/"
-          className="flex min-w-0 flex-1 items-center gap-2 no-underline"
-          sx={{ color: 'inherit', textDecoration: 'none' }}
-        >
-          <Box className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white shadow-sm dark:bg-teal-500 sm:h-10 sm:w-10">
-            <SchoolIcon sx={{ fontSize: { xs: 22, sm: 24 } }} />
-          </Box>
-          <Box className="min-w-0">
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 700, lineHeight: 1.2, fontSize: { xs: '0.9rem', sm: '1rem' } }}
-            >
-              Greenwood Academy
-            </Typography>
-            <Typography variant="caption" color="text.secondary" className="hidden sm:block">
-              School Management Portal
-            </Typography>
-          </Box>
+        <Box className="min-w-0 flex-1">
+          <SchoolBrandLockup to="/" />
         </Box>
         <Box className="hidden items-center gap-1 md:flex">
           <Button
@@ -140,25 +133,40 @@ export function PublicNavbar() {
         </Box>
         <Box className="flex shrink-0 items-center gap-0 sm:gap-1">
           <ThemeToggle />
-          <Button
-            component={RouterLink}
-            to="/login"
-            color="inherit"
-            sx={{ fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
-            variant={isLogin ? 'outlined' : 'text'}
-            size="small"
-          >
-            Sign in
-          </Button>
-          <Button
-            component={RouterLink}
-            to="/register"
-            variant={isRegister ? 'outlined' : 'contained'}
-            size="small"
-            sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-          >
-            Admin setup
-          </Button>
+          {user ? (
+            <Button
+              component={RouterLink}
+              to="/dashboard"
+              color="inherit"
+              sx={{ fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+              variant={isDashboard ? 'outlined' : 'contained'}
+              size="small"
+            >
+              Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button
+                component={RouterLink}
+                to="/login"
+                color="inherit"
+                sx={{ fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+                variant={isLogin ? 'outlined' : 'text'}
+                size="small"
+              >
+                Sign in
+              </Button>
+              <Button
+                component={RouterLink}
+                to="/register"
+                variant={isRegister ? 'outlined' : 'contained'}
+                size="small"
+                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+              >
+                Admin setup
+              </Button>
+            </>
+          )}
         </Box>
       </Toolbar>
 

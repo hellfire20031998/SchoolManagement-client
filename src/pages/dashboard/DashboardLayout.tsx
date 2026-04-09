@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom'
 import {
   AppBar,
   Box,
@@ -12,7 +12,7 @@ import {
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { Logout as LogoutIcon, Menu as MenuIcon } from '@mui/icons-material'
+import { HomeOutlined as HomeOutlinedIcon, Menu as MenuIcon } from '@mui/icons-material'
 import { DashboardSidebarContent } from '../../components/DashboardSidebarContent'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { useAuth } from '../../context/AuthContext'
@@ -34,11 +34,13 @@ export function DashboardLayout() {
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true })
   const { pathname } = useLocation()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [taskRefreshKey, setTaskRefreshKey] = useState(0)
 
-  const segment = pathname.split('/').pop() ?? 'overview'
+  const pathParts = pathname.split('/').filter(Boolean)
+  const leaf = pathParts[pathParts.length - 1] ?? 'overview'
+  const segment = leaf === 'dashboard' ? 'overview' : leaf
   const toolbarTitle = titleFromPath[segment] ?? 'Dashboard'
 
   const bumpTasks = () => setTaskRefreshKey((k) => k + 1)
@@ -67,7 +69,7 @@ export function DashboardLayout() {
               color="inherit"
               edge="start"
               onClick={() => setMobileOpen(true)}
-              sx={{ mr: 1 }}
+              sx={{ mr: 0.5 }}
               aria-label="open navigation menu"
             >
               <MenuIcon />
@@ -90,9 +92,14 @@ export function DashboardLayout() {
             {user?.name || user?.email}
           </Typography>
           <ThemeToggle />
-          <Tooltip title="Sign out">
-            <IconButton color="inherit" onClick={logout} aria-label="sign out">
-              <LogoutIcon />
+          <Tooltip title="School website — public landing page">
+            <IconButton
+              component={RouterLink}
+              to="/"
+              color="inherit"
+              aria-label="School website"
+            >
+              <HomeOutlinedIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>

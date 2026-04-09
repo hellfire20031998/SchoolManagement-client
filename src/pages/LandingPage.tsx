@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate, Link as RouterLink, useLocation } from 'react-router-dom'
+import { Link as RouterLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Box,
@@ -18,6 +18,7 @@ import {
 } from '@mui/icons-material'
 import { PublicNavbar } from '../components/PublicNavbar'
 import { HeroCarousel } from '../components/landing/HeroCarousel'
+import { CampusLifeCarousel } from '../components/landing/CampusLifeCarousel'
 import { useAuth } from '../context/AuthContext'
 
 const viewportOnce = { once: true as const, margin: '-72px' as const, amount: 0.25 }
@@ -61,6 +62,7 @@ const cardStaggerChild = {
 
 function LandingView() {
   const location = useLocation()
+  const { user } = useAuth()
 
   useEffect(() => {
     const id = location.hash.replace(/^#/, '')
@@ -132,18 +134,10 @@ function LandingView() {
             className="relative"
           >
             <motion.div
-              className="aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-teal-100 to-slate-200 shadow-inner dark:from-teal-950 dark:to-slate-800"
               whileHover={{ scale: 1.02 }}
               transition={{ type: 'spring', stiffness: 260, damping: 22 }}
             >
-              <Box className="flex h-full flex-col justify-end p-8">
-                <Typography variant="h6" sx={{ fontWeight: 700 }} className="text-teal-900 dark:text-teal-100">
-                  Campus life
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Arts, athletics, and community service — learning beyond the classroom.
-                </Typography>
-              </Box>
+              <CampusLifeCarousel />
             </motion.div>
           </motion.div>
         </Box>
@@ -237,15 +231,22 @@ function LandingView() {
             </Typography>
             <Box className="flex flex-wrap justify-center gap-3">
               <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
-                <Button component={RouterLink} to="/login" variant="contained" size="large">
-                  Sign in to dashboard
+                <Button
+                  component={RouterLink}
+                  to={user ? '/dashboard' : '/login'}
+                  variant="contained"
+                  size="large"
+                >
+                  {user ? 'Go to dashboard' : 'Sign in to dashboard'}
                 </Button>
               </motion.div>
-              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
-                <Button component={RouterLink} to="/register" variant="outlined" size="large">
-                  Create admin account
-                </Button>
-              </motion.div>
+              {!user ? (
+                <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+                  <Button component={RouterLink} to="/register" variant="outlined" size="large">
+                    Create admin account
+                  </Button>
+                </motion.div>
+              ) : null}
             </Box>
           </motion.div>
         </Container>
@@ -270,12 +271,20 @@ function LandingView() {
             </Typography>
           </Box>
           <Box className="flex flex-wrap justify-center gap-4">
-            <Link component={RouterLink} to="/login" underline="hover" color="inherit" variant="body2">
-              Sign in
-            </Link>
-            <Link component={RouterLink} to="/register" underline="hover" color="inherit" variant="body2">
-              Register
-            </Link>
+            {user ? (
+              <Link component={RouterLink} to="/dashboard" underline="hover" color="inherit" variant="body2">
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link component={RouterLink} to="/login" underline="hover" color="inherit" variant="body2">
+                  Sign in
+                </Link>
+                <Link component={RouterLink} to="/register" underline="hover" color="inherit" variant="body2">
+                  Register
+                </Link>
+              </>
+            )}
             <Link href="#top" underline="hover" color="inherit" variant="body2">
               Back to top
             </Link>
@@ -287,7 +296,7 @@ function LandingView() {
 }
 
 export function LandingPage() {
-  const { user, loading } = useAuth()
+  const { loading } = useAuth()
 
   if (loading) {
     return (
@@ -295,10 +304,6 @@ export function LandingPage() {
         <Typography color="text.secondary">Loading…</Typography>
       </Box>
     )
-  }
-
-  if (user) {
-    return <Navigate to="/dashboard" replace />
   }
 
   return <LandingView />

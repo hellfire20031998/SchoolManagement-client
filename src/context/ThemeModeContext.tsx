@@ -15,14 +15,14 @@ const STORAGE_KEY = 'sms_theme_mode'
 export type ThemeMode = 'light' | 'dark'
 
 function readStored(): ThemeMode {
-  if (typeof window === 'undefined') return 'light'
+  if (typeof window === 'undefined') return 'dark'
   try {
     const v = localStorage.getItem(STORAGE_KEY)
     if (v === 'dark' || v === 'light') return v
   } catch {
     /* ignore */
   }
-  return 'light'
+  return 'dark'
 }
 
 type ThemeModeContextValue = {
